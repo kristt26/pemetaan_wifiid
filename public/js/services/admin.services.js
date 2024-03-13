@@ -343,7 +343,7 @@ function pengetahuanServices($http, $q, helperServices, AuthService, pesan) {
 }
 
 function keluhanServices($http, $q, helperServices, AuthService, pesan) {
-    var controller = helperServices.url + 'keluhan/';
+    var controller = helperServices.url + 'pendataan/';
     var service = {};
     service.data = [];
     return {
@@ -381,6 +381,7 @@ function keluhanServices($http, $q, helperServices, AuthService, pesan) {
             headers: AuthService.getHeader()
         }).then(
             (res) => {
+                service.data.push(res.data);
                 def.resolve(res.data);
             },
             (err) => {
@@ -401,12 +402,14 @@ function keluhanServices($http, $q, helperServices, AuthService, pesan) {
             headers: AuthService.getHeader()
         }).then(
             (res) => {
-                var data = service.data.kerusakan.pengetahuan.find(x => x.id == param.id);
+                var data = service.data.find(x => x.id == param.id);
                 if (data) {
-                    data.kode_gejala = param.kode_gejala;
-                    data.gejala = param.gejala;
-                    data.ya = param.ya;
-                    data.tidak = param.tidak;
+                    data.nama = param.nama;
+                    data.kode = param.kode;
+                    data.lokasi= param.lokasi;
+                    data.lat = param.lat;
+                    data.long = param.long;
+                    data.status = param.status;
                 }
                 def.resolve(res.data);
             },

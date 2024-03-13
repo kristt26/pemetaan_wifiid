@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use App\Models\KeluhanModel;
+use App\Models\WifiidModel;
 
 class Beranda extends BaseController
 {
@@ -11,16 +12,14 @@ class Beranda extends BaseController
         return view('beranda');
     }
 
-    // public function read(): object
-    // {
-    //     $keluhan = new KeluhanModel();
-    //     $data = $keluhan
-    //     ->select("keluhan.*, kerusakan.kerusakan, pelanggan.lat, pelanggan.long, pelanggan.nama, pelanggan.alamat, pelanggan.kontak")
-    //     ->join('kerusakan', 'kerusakan.id=keluhan.kerusakan_id')
-    //     ->join('pelanggan', 'pelanggan.id=keluhan.pelanggan_id')
-    //     ->findAll();
-    //     return $this->respond($data);
-    // }
-
-
+    public function read(): object
+    {
+        try {
+            $wifi = new WifiidModel();
+            $data = $wifi->findAll();
+            return $this->respond($data);
+        } catch (\Throwable $th) {
+            return $this->fail($th->getMessage());
+        }
+    }
 }

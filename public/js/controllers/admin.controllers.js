@@ -13,10 +13,10 @@ function dashboardController($scope, dashboardServices) {
     $scope.title = "Dashboard";
     var all = [];
     mapboxgl.accessToken = 'pk.eyJ1Ijoia3Jpc3R0MjYiLCJhIjoiY2txcWt6dHgyMTcxMzMwc3RydGFzYnM1cyJ9.FJYE8uVi-eVl_mH_DLLEmw';
-    
-    dashboardServices.get().then(res=>{
+
+    dashboardServices.get().then(res => {
         $scope.datas = res;
-        $scope.$applyAsync(x=>{
+        $scope.$applyAsync(x => {
             var map = new mapboxgl.Map({
                 container: 'map',
                 style: 'mapbox://styles/mapbox/satellite-v9',
@@ -24,12 +24,12 @@ function dashboardController($scope, dashboardServices) {
                 zoom: 12
             });
             $scope.datas.forEach(param => {
-                var item = new mapboxgl.Marker({ color: param.status=='Diajukan'?'red':param.status=='Proses' ? 'Yellow' : '' })
+                var item = new mapboxgl.Marker({ color: param.status == '0' ? 'red' :  '' })
                     .setLngLat([Number(param.long), Number(param.lat)])
                     .setPopup(
                         new mapboxgl.Popup({ offset: 25 }) // add popups
                             .setHTML(
-                                `<h4><strong>Nomor Laporan: ${param.nomor}</strong></h4><p>Permasalahan: ${param.kerusakan}<br>Status: <strong>${param.status}</strong></p>`
+                                `<h4><strong>Nama Wifi: ${param.nama}</strong></h4><p>Lokasi: ${param.lokasi}<br>Status: <strong>${param.status == '1' ? 'Aktif' : 'Tidak Aktif'}</strong></p>`
                             )
                     )
                     .addTo(map);
@@ -164,11 +164,12 @@ function pengetahuanController($scope, pengetahuanServices, helperServices, pesa
     }
 }
 
-function keluhanController($scope, keluhanServices, pesan) {
+function keluhanController($scope, keluhanServices, helperServices, pesan, $http) {
     $scope.$emit("SendUp", "Keluhan Konsumen");
     $scope.datas = [];
     $scope.model = {};
     $scope.peta = false;
+    $scope.add = false;
     var map;
     var marker;
     var direction;
@@ -183,6 +184,45 @@ function keluhanController($scope, keluhanServices, pesan) {
             center: [140.7052499, -2.5565586],
             zoom: 12
         });
+        map.addControl(
+            new mapboxgl.GeolocateControl({
+                positionOptions: {
+                    enableHighAccuracy: true
+                },
+                // When active the map will receive updates to the device's location as it changes.
+                trackUserLocation: true,
+                // Draw an arrow next to the location dot to indicate which direction the device is heading.
+                showUserHeading: true
+            })
+        );
+        map.on('click', (e) => {
+            document.getElementById('info').innerHTML =
+                // `e.point` is the x, y coordinates of the `mousemove` event
+                // relative to the top-left corner of the map.
+                JSON.stringify(e.point) +
+                '<br />' +
+                // `e.lngLat` is the longitude, latitude geographical position of the event.
+                JSON.stringify(e.lngLat.wrap());
+            $scope.$applyAsync(x => {
+                $scope.map = false;
+                $scope.model.lat = e.lngLat.lat;
+                $scope.model.long = e.lngLat.lng;
+                var setUrl = 'https://api.mapbox.com/geocoding/v5/mapbox.places/' + $scope.model.long + ',' + $scope.model.lat + '.json?access_token=' + mapboxgl.accessToken;
+                console.log(setUrl);
+                $http({
+                    method: 'get',
+                    url: setUrl,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }).then(res => {
+                    $scope.model.lokasi = res.data.features[0].place_name;
+                    $scope.peta = false;
+                }, err => {
+
+                });
+            })
+        });
     }
 
     $.LoadingOverlay('show');
@@ -192,149 +232,12 @@ function keluhanController($scope, keluhanServices, pesan) {
         $.LoadingOverlay('hide');
     })
 
-    $scope.tampilPeta = (param) => {
-        $scope.$applyAsync(x => {
-            if (direction) {
-                direction.removeRoutes();
-                direction.removeWaypoint();
-            }
-            if (marker) marker.remove();
-            if (all.length != 0) {
-                for (let index = 0; index < all.length; index++) {
-                    all[index].remove();
-                }
-            }
-            marker = new mapboxgl.Marker()
-                .setLngLat([Number(param.long), Number(param.lat)])
-                .addTo(map);
-            if (!direction) {
-                direction = new MapboxDirections({
-                    accessToken: mapboxgl.accessToken,
-                    // controls: {
-                    //     inputs: false,
-                    //     instructions: false,
-                    //     profileSwitcher: false
-                    // }
-                });
-                map.addControl(direction, 'top-left');
-                setTimeout(() => {
-                    direction.setOrigin([140.70533, -2.55661]);
-                    direction.setDestination([param.long, param.lat]);
-                }, 2000);
-
-
-                direction.on("route", e => {
-                    // routes is an array of route objects as documented here:
-                    // https://docs.mapbox.com/api/navigation/#route-object
-                    let routes = e.route
-                    console.log(routes);
-
-                    // Each route object has a distance property
-                    console.log("Route lengths", routes.map(r => r.distance))
-                })
-            } else {
-                direction.setOrigin([140.70533, -2.55661]);
-                direction.setDestination([param.long, param.lat]);
-            }
-            if (!current) {
-                current = map.addControl(
-                    new mapboxgl.GeolocateControl({
-                        positionOptions: {
-                            enableHighAccuracy: true
-                        },
-                        // When active the map will receive updates to the device's location as it changes.
-                        trackUserLocation: true,
-                        // Draw an arrow next to the location dot to indicate which direction the device is heading.
-                        showUserHeading: true
-                    })
-                );
-            }
-            $scope.peta = true;
-        })
-    }
-
-    $scope.allMarker = () => {
-        $scope.arah = false;
-        $scope.$applyAsync(x => {
-            if (marker) {
-                marker.remove();
-            }
-            if (direction) {
-                map.removeControl(direction);
-            }
-            if (all.length != 0) {
-                for (let index = 0; index < all.length; index++) {
-                    all[index].remove();
-                }
-            }
-            $scope.datas.keluhan.forEach(param => {
-                var item = new mapboxgl.Marker()
-                    .setLngLat([Number(param.long), Number(param.lat)])
-                    .setPopup(
-                        new mapboxgl.Popup({ offset: 25 }) // add popups
-                            .setHTML(
-                                `<h4>nomor:${param.nomor}</h4><p>${param.kerusakan}</p>`
-                            )
-                    )
-                    .addTo(map);
-                all.push(item);
-            });
-
-            if (!current) {
-                current = map.addControl(
-                    new mapboxgl.GeolocateControl({
-                        positionOptions: {
-                            enableHighAccuracy: true
-                        },
-                        // When active the map will receive updates to the device's location as it changes.
-                        trackUserLocation: true,
-                        // Draw an arrow next to the location dot to indicate which direction the device is heading.
-                        showUserHeading: true
-                    })
-                );
-            }
-            $scope.peta = true;
-        })
-    }
-
-    $scope.setDirection = (param) => {
-        if (param) {
-            $scope.$applyAsync(x => {
-                direction = new MapboxDirections({
-                    accessToken: mapboxgl.accessToken
-                });
-                map.addControl(direction, 'top-left');
-            })
-        } else {
-            $scope.$applyAsync(x => {
-                map.removeControl(direction);
-                // var element = document.querySelectorAll('.mapboxgl-ctrl-directions');
-                // element.forEach(box => {
-                //     box.remove();
-                // });
-                // direction.removeRoutes();
-                // direction.removeWaypoint();
-                // direction = undefined
-                // console.log(direction);
-            })
-        }
-        console.log(param);
-    }
-
     $scope.kembali = () => {
         $scope.peta = false;
     }
 
-    $scope.mulai = () => {
-        $scope.hasil = undefined;
-        $("#mulai").modal('hide');
-        $.LoadingOverlay('show');
-        setTimeout(() => {
-            $scope.setData = angular.copy($scope.datas)
-            $scope.pertanyaan = angular.copy($scope.setData.pengetahuan[0]);
-            $("#mulai").modal('show');
-            $.LoadingOverlay('hide');
-        }, 200);
+    $scope.showPeta = () => {
+        $scope.peta = true;
     }
 
     $scope.check = (param) => {
@@ -362,18 +265,27 @@ function keluhanController($scope, keluhanServices, pesan) {
         }
     }
 
+    $scope.ubah = (param)=>{
+        $scope.model = angular.copy(param);
+        $scope.model.tanggal = new Date(param.tanggal);
+    }
+
     $scope.save = () => {
         pesan.dialog('Yakin ingin menyimpan hasil?', "Ya", "Tidak", "info").then(x => {
             $.LoadingOverlay('show');
-            $scope.model.kerusakan = $scope.hasil.kerusakan;
-            $scope.model.kerusakan_id = $scope.hasil.id;
-            keluhanServices.post($scope.model).then(res => {
-                $scope.model = {};
-                $scope.gejala = {};
-                $scope.hasil = undefined;
-                $.LoadingOverlay('hide');
-                $("#mulai").modal('hide');
-            })
+            var item = angular.copy($scope.model);
+            item.tanggal = helperServices.dateToString($scope.model.tanggal)
+            if($scope.model.id){
+                keluhanServices.put(item).then(res => {
+                    $scope.model = {};
+                    $.LoadingOverlay('hide');
+                })
+            }else{
+                keluhanServices.post(item).then(res => {
+                    $scope.model = {};
+                    $.LoadingOverlay('hide');
+                })
+            }
         })
     }
 

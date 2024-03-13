@@ -2,30 +2,14 @@
             <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
                 <div class="sb-sidenav-menu">
                     <div class="nav">
-                        <a class="nav-link" href="<?= base_url() ?>">
+                        <a class="nav-link" href="<?= base_url('beranda') ?>">
                             <div class="sb-nav-link-icon"><i class="fas fa-tachometer-alt"></i></div>
                             Dashboard
                         </a>
-                        <?php if (session()->get('akses') == 'Admin') : ?>
-                            <a class="nav-link" href="<?= base_url('kerusakan') ?>">
-                                <div class="sb-nav-link-icon"><i class="fas fa-house-damage"></i></div>
-                                Kerusakan
-                            </a>
-                            <a class="nav-link" href="<?= base_url('gejala') ?>">
-                                <div class="sb-nav-link-icon"><i class="fab fa-uncharted"></i></i></div>
-                                Gejala
-                            </a>
-                            <a class="nav-link" href="<?= base_url('keluhan') ?>">
-                                <div class="sb-nav-link-icon"><i class="fa fa-exclamation-circle"></i></div>
-                                Daftar Keluhan
-                            </a>
-                        <?php endif; ?>
-                        <?php if (session()->get('akses') == 'Pelanggan') : ?>
-                            <a class="nav-link" href="<?= base_url('keluhan') ?>">
-                                <div class="sb-nav-link-icon"><i class="fa fa-exclamation-circle"></i></div>
-                                Keluhan
-                            </a>
-                        <?php endif; ?>
+                        <a class="nav-link" href="<?= base_url('pendataan') ?>">
+                            <div class="sb-nav-link-icon"><i class="fas fa-wifi"></i></div>
+                            Pendataan
+                        </a>
                     </div>
                 </div>
                 <div class="sb-sidenav-footer">
